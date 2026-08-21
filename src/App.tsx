@@ -211,16 +211,24 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: queryToSubmit, strategy }),
       });
+      
       const ragData = await ragRes.json();
+      
+      if (!ragRes.ok) {
+        throw new Error(ragData.detail || 'RAG Query failed');
+      }
+      
       setAnswer(ragData.answer);
-      setSources(ragData.sources);
-      setIsGrounded(ragData.grounded);
+      setSources(ragData.sources || []);
+      setIsGrounded(ragData.grounded || false);
       setGuardrail(ragData.guardrail);
       setLatency(ragData.latency);
       setPipelineState('complete');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setPipelineState('idle');
+      setAnswer(`Error: ${error.message}`);
+      setSources([]);
+      setPipelineState('complete');
     }
   };
 
