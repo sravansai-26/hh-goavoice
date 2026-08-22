@@ -253,13 +253,13 @@ function App() {
         <nav aria-label="Primary navigation">
           {[['ASK', '#ask'], ['RETRIEVAL', '#retrieval'], ['PERFORMANCE', '#performance'], ['SYSTEM', '#system']].map(([name, href], index) => <a className={index === 0 ? 'active' : ''} href={href} key={name}>{name}</a>)}
         </nav>
-        <div className="task-badge"><span>TASK</span><strong>02</strong></div>
+        <img src="/hackerhouse.svg" alt="Hacker House" className="hackerhouse-logo" />
       </header>
 
       <main>
         <section className="hero" id="ask">
           <div className="hero-copy">
-            <div className="hero-kicker"><span className="live-dot" /> DEVELOPMENT MODE <span className="slash">/</span> BACKEND CONTRACT READY</div>
+            <div className="hero-kicker"><span className="live-dot" /> LIVE RAG PIPELINE <span className="slash">/</span> CONNECTED</div>
             <h1>Ask the<br /><i>knowledge base.</i></h1>
             <p className="hero-lede">A voice-enabled retrieval system built for HH Goa 2026. Speak naturally — we transcribe, retrieve, verify, then answer.</p>
             <div className="flow-caption"><span>SPEAK NATURALLY</span><ArrowDown size={14} /><span>WE RETRIEVE</span><ArrowDown size={14} /><span>WE VERIFY</span><ArrowDown size={14} /><span>WE ANSWER</span></div>
@@ -352,8 +352,13 @@ function App() {
           <section className="panel system-panel" id="system"><SectionHeading eyebrow="RUNTIME" title="System status"><span className="connection-indicator"><i /> DEVELOPMENT</span></SectionHeading><SystemStatus /><div className="dataset-card"><div><Label tone="yellow">KNOWLEDGE SOURCE</Label><strong>MSMARCO-XI</strong><span>AI4BHARAT · Hugging Face dataset</span></div><ArrowUpRight size={17} /></div><button className="architecture-button" onClick={() => setShowArchitecture((value) => !value)}>{showArchitecture ? 'HIDE' : 'VIEW'} SYSTEM CONTRACT <ArrowDown size={15} /></button>{showArchitecture && <div className="architecture-popover"><code>VOICE → SARVAM STT → QUERY VALIDATION → {strategy.toUpperCase()} RETRIEVAL → GROUNDING → GENERATION → SAFETY</code></div>}</section>
         </section>
       </main>
-
-      <footer><div className="footer-brand"><span>RAG</span><b>//</b><span>GOA</span></div><span>VOICE INTELLIGENCE LAB / TASK 02</span><span className="footer-right"><WifiOff size={13} /> API CONTRACTS READY · LIVE SERVICES NOT CONNECTED</span></footer>
+      <footer>
+        <div className="footer-brand"><span>RAG</span><b>//</b><span>GOA</span></div>
+        <span>
+          Designed and Developed by <a href="https://buildwithsravan.dev" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>Sravan Sai Vuppula</a>, Founder and Lead Developer at <a href="https://sailyfspot.blogspot.com" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>LYFSpot</a> for the Hacker House Goa by 2:47 pm studio.
+        </span>
+        <span className="footer-right"><Activity size={13} /> PRODUCTION READY · SERVICES CONNECTED</span>
+      </footer>
     </div>
   );
 }
