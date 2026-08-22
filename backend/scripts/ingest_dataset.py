@@ -20,7 +20,11 @@ async def main():
     embedder = get_embedding_provider()
     
     print("Connecting to Qdrant...")
-    client = QdrantClient(path="local_qdrant")
+    from app.config import settings
+    if settings.QDRANT_MODE == "cloud" and settings.clean_qdrant_url:
+        client = QdrantClient(url=settings.clean_qdrant_url, api_key=settings.QDRANT_API_KEY)
+    else:
+        client = QdrantClient(path="local_qdrant")
     
     collection_name = "msmarco_xi_chunks"
     
@@ -28,14 +32,15 @@ async def main():
     vector_size = len(dummy_vec)
     print(f"Embedding vector size: {vector_size}")
     
-    if not client.collection_exists(collection_name):
-        client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
-        )
-        print(f"Created collection {collection_name}")
-    else:
-        print(f"Collection {collection_name} already exists. Appending...")
+    if client.collection_exists(collection_name):
+        print(f"Recreating collection {collection_name} for new vector size {vector_size}...")
+        client.delete_collection(collection_name=collection_name)
+        
+    client.create_collection(
+        collection_name=collection_name,
+        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE),
+    )
+    print(f"Created collection {collection_name}")
 
     split = os.getenv("MSMARCO_SPLIT", "validation")
     limit_str = os.getenv("MSMARCO_LIMIT", "500")
