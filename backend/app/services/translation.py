@@ -25,15 +25,19 @@ Query: {query}
 Translation:
 """
         try:
-            response = await self.client.aio.models.generate_content(
-                model=self.model,
-                contents=prompt,
+            import asyncio
+            response = await asyncio.wait_for(
+                self.client.aio.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                ),
+                timeout=2.5
             )
             english_query = response.text.strip()
             latency_ms = int((time.time() - start_time) * 1000)
             return {"english_query": english_query, "latency_ms": latency_ms}
         except Exception as e:
-            # Fallback on failure
-            return {"english_query": query, "latency_ms": 0}
+            # Fallback on failure or timeout
+            return {"english_query": query, "latency_ms": int((time.time() - start_time) * 1000)}
 
 translator = TranslationProvider()

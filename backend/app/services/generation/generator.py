@@ -55,12 +55,10 @@ Original Query ({language_name}): {query}
 English Bridge Query: {english_query}
 """
         
-        max_retries = 3
-        base_delay = 1.0
-        
-        for attempt in range(max_retries):
-            try:
-                response = await self.client.aio.models.generate_content(
+        try:
+            # We enforce a strict timeout to prevent 58s hangs
+            response = await asyncio.wait_for(
+                self.client.aio.models.generate_content(
                     model=self.model,
                     contents=prompt,
                     config=types.GenerateContentConfig(
@@ -68,32 +66,41 @@ English Bridge Query: {english_query}
                         response_schema=GenerationOutput,
                         temperature=0.1,
                     )
-                )
-                
-                # The response is guaranteed to match GenerationOutput schema
-                import json
-                result_data = json.loads(response.text)
-                latency_ms = int((time.time() - start_time) * 1000)
-                
-                primary_ans = result_data["answer"]["primary"]
-                english_ans = result_data["answer"]["english"]
-                
-                # The user explicitly wants to see the general knowledge answer even when ungrounded,
-                # while relying on the UI to correctly display the "FAIL" guardrail state.
-                # So we no longer overwrite ungrounded answers with "I don't have enough evidence..."
-
-
-                return {
-                    "answer_primary": primary_ans,
-                    "answer_english": english_ans,
-                    "grounded": result_data["grounded"],
-                    "latency_ms": latency_ms
-                }
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(base_delay * (2 ** attempt))
-                    continue
-                raise Exception(f"Generation failed after {max_retries} attempts: {str(e)}")
+                ),
+                timeout=4.5
+            )
+            
+            import json
+            result_data = json.loads(response.text)
+            latency_ms = int((time.time() - start_time) * 1000)
+            
+            primary_ans = result_data["answer"]["primary"]
+            english_ans = result_data["answer"]["english"]
+            
+            return {
+                "answer_primary": primary_ans,
+                "answer_english": english_ans,
+                "grounded": result_data["grounded"],
+                "latency_ms": latency_ms
+            }
+        except asyncio.TimeoutError:
+            latency_ms = int((time.time() - start_time) * 1000)
+            fallback_ans = context[0]['text'] if context else "Retrieval successful, but generation timed out."
+            return {
+                "answer_primary": fallback_ans,
+                "answer_english": fallback_ans,
+                "grounded": False,
+                "latency_ms": latency_ms
+            }
+        except Exception as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            fallback_ans = f"Generation Error: {str(e)[:50]}"
+            return {
+                "answer_primary": fallback_ans,
+                "answer_english": fallback_ans,
+                "grounded": False,
+                "latency_ms": latency_ms
+            }
 
 def get_generation_provider() -> GenerationProvider:
     return GeminiProvider()
