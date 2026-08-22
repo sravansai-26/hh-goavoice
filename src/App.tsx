@@ -152,6 +152,7 @@ function App() {
       stream.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream.current);
       audioChunks.current = [];
+      setTranscript('');
       
       mediaRecorder.current.ondataavailable = (event) => {
         audioChunks.current.push(event.data);
