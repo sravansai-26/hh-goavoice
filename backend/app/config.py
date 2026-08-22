@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     VECTOR_DB_URL: str = "local"
     VECTOR_DB_API_KEY: Optional[str] = None
     GENERATION_PROVIDER: str = "gemini" # gemini, openai, anthropic
-    GENERATION_MODEL: str = os.getenv("GENERATION_MODEL", "gemini-1.5-flash")
+    GENERATION_MODEL: str = "gemini-1.5-flash"
     GENERATION_API_KEY: Optional[str] = None
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
