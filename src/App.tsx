@@ -316,12 +316,23 @@ function App() {
                       <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0' }}>{queryInfo.english}</p>
                     </div>
                   )}
+                  {pipelineState === 'processing' && (!queryInfo || !queryInfo.english) && transcript && (
+                    <div style={{ background: 'var(--dark)', border: '1px solid rgba(244,240,223,.1)', borderRadius: '6px', padding: '16px' }}>
+                      <Label tone="muted">ENGLISH BRIDGE</Label>
+                      <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0', opacity: 0.5, fontStyle: 'italic' }}><span className="connection-indicator"><i /></span> Translating and searching knowledge base...</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>
               )}
               
-              <div className="panel-footer"><span className="mono">POST /api/voice/transcribe</span>{recorderState === 'captured' && <button className="text-button" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>}</div>
+              <div className="panel-footer">
+                <span className="mono">POST /api/voice/transcribe</span>
+                {recorderState === 'captured' && (
+                  <button className="text-button submit-pulse" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>
+                )}
+              </div>
             </section>
 
             <section className="panel pipeline-panel">
