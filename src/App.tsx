@@ -211,6 +211,9 @@ function App() {
     setPipelineState('processing');
     setSources([]);
     setAnswerData(null);
+    setQueryInfo(null);
+    setGuardrail(null);
+    setLatency(null);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || '';
       const ragRes = await fetch(`${API_BASE}/api/rag/query`, {

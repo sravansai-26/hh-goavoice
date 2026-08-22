@@ -33,16 +33,9 @@ async def transcribe_voice(file: UploadFile = File(...)):
         # Using filename to pass extension to the STT provider if needed
         result = await stt_provider.transcribe(audio_bytes, filename=file.filename)
         
-        # Translate to english concurrently so the frontend has it immediately
         transcript = result["transcript"]
         lang_code = result["language_code"]
         
-        if lang_code == "en":
-            english_transcript = transcript
-        else:
-            trans_res = await translator.translate_to_english(transcript)
-            english_transcript = trans_res.get("english_query", transcript)
-            
         duration_ms = int((time.time() - start_time) * 1000)
         
         return VoiceTranscribeResponse(
@@ -50,7 +43,7 @@ async def transcribe_voice(file: UploadFile = File(...)):
             transcript=transcript,
             language=lang_code,
             duration_ms=duration_ms,
-            error={"english_transcript": english_transcript} # Hack to pass it without changing Pydantic schema in 1 file
+            error={"english_transcript": transcript} # Fallback to original
         )
     except Exception as e:
         return VoiceTranscribeResponse(
