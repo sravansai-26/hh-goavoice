@@ -381,6 +381,35 @@ function App() {
               </div>
             </section>
 
+            <section className="panel architecture-panel">
+              <SectionHeading eyebrow="AI INTELLIGENCE" title="Model Infrastructure"><span className="active-chip"><i /> ONLINE</span></SectionHeading>
+              
+              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                  <Radio size={20} color="var(--pink)" />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>SARVAM AI · STT ENGINE</strong>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>High-fidelity Indic language speech recognition</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                  <Database size={20} color="var(--yellow)" />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>QDRANT · VECTOR SEARCH</strong>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Semantic retrieval from MSMARCO-XI database</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                  <Sparkles size={20} color="var(--green)" />
+                  <div>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>GEMINI FLASH · GENERATION</strong>
+                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Evidence-grounded multilingual reasoning</span>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </section>
 
