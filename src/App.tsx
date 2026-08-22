@@ -313,7 +313,6 @@ function App() {
                       aria-label="Editable transcript" 
                     />
                   </div>
-                  </div>
                 </div>
               ) : (
                 <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>
