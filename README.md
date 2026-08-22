@@ -6,6 +6,11 @@
 
 RAG//GOA is a production-grade, voice-enabled Retrieval-Augmented Generation (RAG) system built for the Hacker House Goa 2026. It seamlessly connects real-time voice input to a multi-strategy vector retrieval engine backed by the MSMARCO-XI dataset and Google Gemini, wrapped in a beautiful Bolt UI.
 
+## Demo Videos
+We have included two demonstration videos in the repository to showcase the system in action and our development journey:
+- **[Voice RAG Demo](public/videos/voicerag-demo.mp4)**: A full demonstration of the multilingual voice-enabled RAG system in action.
+- **[Build Process](public/videos/build-process.mp4)**: A walkthrough of our build process, UI design, and system architecture.
+
 ## Features
 - **Real Voice Capture**: Uses the browser's MediaRecorder API.
 - **Voice-to-Text**: High-fidelity Indian language transcription via Sarvam API.
