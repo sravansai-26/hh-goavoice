@@ -32,9 +32,18 @@ RAG//GOA is a production-grade, voice-enabled Retrieval-Augmented Generation (RA
 2. `npm run dev`
 3. Open `http://localhost:5173`
 
-## Architecture & Benchmarks
-- View the system design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- View our latency numbers: [docs/BENCHMARK.md](docs/BENCHMARK.md)
+## Production Deployment
+
+The system is deployed and live for Hacker House Goa 2026.
+
+- **Frontend (Vercel)**: [https://hh-goavoice.vercel.app/](https://hh-goavoice.vercel.app/)
+- **Backend (Render)**: [https://hh-goavoice.onrender.com](https://hh-goavoice.onrender.com)
+- **Vector Database**: Qdrant Cloud (`msmarco_xi_chunks`)
+
+### Architecture Notes
+- The Vercel frontend communicates with the Render FastAPI backend explicitly through the `VITE_API_URL` environment variable.
+- All secrets (`SARVAM_API_KEY`, `GENERATION_API_KEY`, `QDRANT_API_KEY`) remain strictly isolated in the Render backend environment variables.
+- The frontend exposes absolutely zero sensitive credentials.
 
 ## Acknowledgements
 Built for #RAGInGoa.
