@@ -381,28 +381,6 @@ function App() {
               </div>
             </section>
 
-            <section className="panel inspector-panel" id="retrieval">
-              <SectionHeading eyebrow="RETRIEVAL INSPECTOR" title="Evidence layer"><span className="active-chip"><i /> VECTOR SEARCH</span></SectionHeading>
-              <div className="inspector-controls"><div><Label>CHUNK STRATEGY</Label><div className="select-wrap"><SlidersHorizontal size={15} /><select value={strategy} onChange={(event) => setStrategy(event.target.value)} aria-label="Chunk strategy"><option value="hybrid">Hybrid</option><option value="semantic">Semantic</option><option value="fixed">Fixed + overlap</option><option value="metadata">Metadata-aware</option></select><ChevronDown size={14} /></div></div><div className="inspector-metric"><Label>TOP K</Label><strong>5</strong></div><div className="inspector-metric"><Label>SCANNED</Label><strong>{sources.length}</strong></div></div>
-              
-              {sources.length > 0 ? (
-                <div className="evidence-list" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
-                  {sources.map((s, idx) => (
-                    <div key={idx} style={{ padding: '0.75rem', background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        <span className="mono">{s.document_id || s.chunk_id}</span>
-                        <span>SCORE: {s.score?.toFixed(4) || "N/A"}</span>
-                      </div>
-                      <p style={{ fontSize: '0.875rem', lineHeight: 1.5, margin: 0 }}>{s.text}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="evidence-empty"><FileText size={19} /><div><strong>No supporting context retrieved.</strong><span>Evidence cards will appear here after the MSMARCO-XI index is connected.</span></div></div>
-              )}
-              
-              <div className="source-line"><Database size={14} /><span>MSMARCO-XI / AI4BHARAT</span><em>INDEX —</em></div>
-            </section>
           </div>
         </section>
 
@@ -435,7 +413,17 @@ function App() {
                 const score = isSelected && sources.length > 0 ? (sources.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / sources.length).toFixed(4) : '—';
                 const lat = isSelected && latency ? latency.retrieval_ms + 'ms' : '—';
                 return (
-                  <div className={`strategy-row ${isSelected ? `strategy-${item.color}` : ''}`} key={item.name} style={{ opacity: isSelected ? 1 : 0.4 }}>
+                  <div 
+                    className={`strategy-row ${isSelected ? `strategy-${item.color}` : ''}`} 
+                    key={item.name} 
+                    style={{ opacity: isSelected ? 1 : 0.4, cursor: 'pointer' }}
+                    onClick={() => {
+                      if (item.name.includes('Fixed')) setStrategy('fixed');
+                      else if (item.name.includes('Semantic')) setStrategy('semantic');
+                      else if (item.name.includes('Metadata')) setStrategy('metadata');
+                      else if (item.name.includes('Hybrid')) setStrategy('hybrid');
+                    }}
+                  >
                     <span className="strategy-index">0{index + 1}</span>
                     <div><strong>{item.name}</strong><small>{item.detail}</small></div>
                     <span className="strategy-value">{score}</span>
