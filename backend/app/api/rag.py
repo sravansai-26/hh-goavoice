@@ -87,30 +87,10 @@ async def process_rag_query(req: RAGRequest):
     
     # Guardrail: Retrieval sufficiency
     retrieval_guard = guardrails.validate_retrieval(retrieved_chunks)
-    if retrieval_guard["status"] == "FAIL":
-        if lang_name.lower() == "telugu":
-            no_evi_ans = "ఈ ప్రశ్నకు సమాధానం ఇవ్వడానికి తగిన ఆధారాలు నాకు లభించలేదు."
-        elif lang_name.lower() == "hindi":
-            no_evi_ans = "मुझे इस प्रश्न का उत्तर देने के लिए पर्याप्त प्रमाण नहीं मिले हैं।"
-        elif lang_name.lower() == "tamil":
-            no_evi_ans = "இந்தக் கேள்விக்குப் பதிலளிக்க போதுமான ஆதாரங்கள் கிடைக்கவில்லை."
-        else:
-            no_evi_ans = "I do not have enough evidence to answer this question."
-
-        latencies["total_ms"] = int((time.time() - start_time) * 1000)
-        return RAGResponse(
-            success=False,
-            language={"detected": lang_code, "name": lang_name},
-            query={"original": req.query, "english": english_query},
-            answer={"primary": no_evi_ans, "english": "I don't have enough evidence in the retrieved sources to answer this question."},
-            sources=retrieved_chunks,
-            grounded=False,
-            guardrail=retrieval_guard,
-            retrieval={"strategy": req.strategy, "top_k": req.top_k, "results_count": len(retrieved_chunks)},
-            latency=latencies
-        )
-        
+    
     # 4. Generation
+    # We still generate the answer even if retrieval failed, to show the user the model's knowledge,
+    # but the guardrails will mark it as FAILED / UNGROUNDED.
     try:
         gen_res = await generator.generate(
             query=req.query,
@@ -126,21 +106,24 @@ async def process_rag_query(req: RAGRequest):
     latencies["total_ms"] = int((time.time() - start_time) * 1000)
     
     # 5. Guardrail: Generation & Grounding formulation
+    # If retrieval was insufficient, force grounded=False
+    if retrieval_guard["status"] == "FAIL":
+        gen_res["grounded"] = False
+        
     gen_guard = guardrails.validate_generation(gen_res.get("answer_primary", ""), gen_res.get("grounded", False))
     success = gen_guard["status"] == "PASS"
     
     from app.services.telemetry import log_metrics
     log_metrics(latencies, success)
     
-    if not success:
-        gen_res["answer_primary"] = f"FAILED: {gen_guard['reason']}"
-        gen_res["answer_english"] = "Generation failed safety checks."
+    # DO NOT overwrite the answer with "FAILED". The user wants to see the actual answer,
+    # while the UI correctly shows the "FAIL" badge for grounding.
     
     return RAGResponse(
         success=success,
         language={"detected": lang_code, "name": lang_name},
         query={"original": req.query, "english": english_query},
-        answer={"primary": gen_res["answer_primary"], "english": gen_res["answer_english"]},
+        answer={"primary": gen_res.get("answer_primary", ""), "english": gen_res.get("answer_english", "")},
         sources=retrieved_chunks,
         grounded=gen_res.get("grounded", False),
         guardrail=gen_guard,
