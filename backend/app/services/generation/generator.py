@@ -19,7 +19,7 @@ class GenerationProvider:
 class GeminiProvider(GenerationProvider):
     def __init__(self):
         self.api_key = settings.GENERATION_API_KEY
-        self.model = "gemini-3.7-flash"
+        self.model = "gemini-3.5-flash-lite"
         if not self.api_key:
             self.client = None
         else:

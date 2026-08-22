@@ -313,13 +313,7 @@ function App() {
                       aria-label="Editable transcript" 
                     />
                   </div>
-                  
-                  {queryInfo && queryInfo.english && (
-                    <div style={{ background: 'var(--dark)', border: '1px solid rgba(244,240,223,.1)', borderRadius: '6px', padding: '16px' }}>
-                      <Label tone="muted">ENGLISH BRIDGE</Label>
-                      <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0' }}>{queryInfo.english}</p>
-                    </div>
-                  )}
+                  </div>
                 </div>
               ) : (
                 <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>
@@ -356,12 +350,6 @@ function App() {
                     <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: 'var(--yellow)', marginBottom: '10px', textTransform: 'uppercase' }}>{language?.name || 'ANSWER'} — PRIMARY</h4>
                     <h2 style={{ margin: 0, fontSize: 'clamp(20px, 2.5vw, 24px)', lineHeight: 1.3 }}>{answerData.primary}</h2>
                   </div>
-                  {answerData.english && answerData.english !== answerData.primary && (
-                    <div style={{ borderTop: '1px solid rgba(244,240,223,.1)', paddingTop: '1.5rem' }}>
-                      <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: '#9cb4a3', marginBottom: '10px' }}>ENGLISH — SECONDARY</h4>
-                      <p style={{ margin: 0, fontSize: '15px', color: '#9cb4a3', lineHeight: 1.5 }}>{answerData.english}</p>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <>
@@ -420,7 +408,7 @@ function App() {
               <div className="card-caption">Aggregating real-time latency across current session.</div>
             </div>
           </div>
-          <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'TRANSLATION', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
+          <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
         </section>
 
         <section className="lower-grid">
