@@ -1,4 +1,6 @@
 from app.config import settings
+import httpx
+import os
 
 class EmbeddingProvider:
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -7,33 +9,33 @@ class EmbeddingProvider:
     async def embed_query(self, text: str) -> list[float]:
         raise NotImplementedError
 
-class LocalSentenceTransformerProvider(EmbeddingProvider):
+class HFInferenceEmbeddingProvider(EmbeddingProvider):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.EMBEDDING_MODEL
-        try:
-            from sentence_transformers import SentenceTransformer
-            # Using cpu by default for broad compatibility
-            self.model = SentenceTransformer(self.model_name, device="cpu")
-        except ImportError:
-            raise Exception("sentence-transformers not installed. Install it or use an external provider.")
-            
+        self.api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/{self.model_name}"
+        self.headers = {}
+        hf_token = os.getenv("HF_TOKEN")
+        if hf_token:
+            self.headers["Authorization"] = f"Bearer {hf_token}"
+
+    async def _call_api(self, inputs):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self.api_url, headers=self.headers, json={"inputs": inputs})
+            response.raise_for_status()
+            return response.json()
+
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        # This is blocking, in a real async FastAPI app we'd run this in a threadpool
-        # But for the hackathon/simplicity, we just call it directly.
-        embeddings = self.model.encode(texts)
-        return embeddings.tolist()
+        return await self._call_api(texts)
         
     async def embed_query(self, text: str) -> list[float]:
-        embedding = self.model.encode([text])[0]
-        return embedding.tolist()
+        result = await self._call_api([text])
+        return result[0]
 
 _provider_instance = None
 
 def get_embedding_provider() -> EmbeddingProvider:
     global _provider_instance
     if _provider_instance is None:
-        if settings.EMBEDDING_PROVIDER == "local":
-            _provider_instance = LocalSentenceTransformerProvider()
-        else:
-            _provider_instance = LocalSentenceTransformerProvider()
+        # Default to HF Inference API to save RAM on Render Free Tier
+        _provider_instance = HFInferenceEmbeddingProvider()
     return _provider_instance
