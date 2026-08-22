@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     EMBEDDING_PROVIDER: str = "local" # local or external
     EMBEDDING_MODEL: str = "paraphrase-multilingual-MiniLM-L12-v2"
     QDRANT_MODE: str = os.getenv("QDRANT_MODE", "local") # local or cloud
+    
+    @property
+    def clean_qdrant_url(self) -> Optional[str]:
+        val = os.getenv("QDRANT_URL")
+        return val.strip() if val else None
+
     QDRANT_URL: Optional[str] = os.getenv("QDRANT_URL", None)
     QDRANT_API_KEY: Optional[str] = os.getenv("QDRANT_API_KEY", None)
     VECTOR_DB_URL: str = "local"

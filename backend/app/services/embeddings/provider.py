@@ -19,13 +19,17 @@ class HFInferenceEmbeddingProvider(EmbeddingProvider):
             self.headers["Authorization"] = f"Bearer {hf_token}"
 
     async def _call_api(self, inputs):
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(self.api_url, headers=self.headers, json={"inputs": inputs})
-                response.raise_for_status()
-                return response.json()
-            except Exception as e:
-                raise Exception(f"HuggingFace Inference API Error: {str(e)}")
+        def _sync_call():
+            import requests
+            response = requests.post(self.api_url, headers=self.headers, json={"inputs": inputs}, timeout=15)
+            response.raise_for_status()
+            return response.json()
+            
+        import asyncio
+        try:
+            return await asyncio.to_thread(_sync_call)
+        except Exception as e:
+            raise Exception(f"HuggingFace Inference API Error: {str(e)}")
 
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return await self._call_api(texts)

@@ -6,8 +6,8 @@ import time
 class RetrievalService:
     def __init__(self, collection_name: str = "msmarco_xi_chunks"):
         from app.config import settings
-        if settings.QDRANT_MODE == "cloud" and settings.QDRANT_URL:
-            self.client = QdrantClient(url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY)
+        if settings.QDRANT_MODE == "cloud" and settings.clean_qdrant_url:
+            self.client = QdrantClient(url=settings.clean_qdrant_url, api_key=settings.QDRANT_API_KEY)
         else:
             self.client = QdrantClient(path="local_qdrant")
         self.collection_name = collection_name
