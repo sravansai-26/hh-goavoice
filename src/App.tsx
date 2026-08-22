@@ -79,8 +79,8 @@ function Pipeline({ state }: { state: PipelineState }) {
   return (
     <div className="pipeline" aria-label="Voice to answer pipeline">
       {pipeline.map(([number, name, detail], index) => {
-        const isComplete = state === 'complete' && index < 2;
-        const isActive = state === 'processing' && index === 1;
+        const isComplete = state === 'complete';
+        const isActive = state === 'processing';
         return (
           <div className="pipeline-step" key={name}>
             <div className={`pipeline-node ${isComplete ? 'node-complete' : ''} ${isActive ? 'node-active' : ''}`}>
@@ -95,18 +95,18 @@ function Pipeline({ state }: { state: PipelineState }) {
   );
 }
 
-function SystemStatus() {
+function SystemStatus({ isConnected, state }: { isConnected: boolean; state: PipelineState }) {
   const services = [
     ['STT ADAPTER', 'READY', Mic],
-    ['VECTOR INDEX', 'NOT CONNECTED', Database],
-    ['RETRIEVER', 'STANDBY', Search],
-    ['GENERATOR', 'STANDBY', Sparkles],
+    ['VECTOR INDEX', isConnected ? 'CONNECTED' : 'NOT CONNECTED', Database],
+    ['RETRIEVER', state === 'processing' ? 'ACTIVE' : 'STANDBY', Search],
+    ['GENERATOR', state === 'processing' ? 'ACTIVE' : 'STANDBY', Sparkles],
     ['GUARDRAILS', 'READY', ShieldCheck],
   ] as const;
   return (
     <div className="status-list">
       {services.map(([name, status, Icon]) => (
-        <div className="status-row" key={name}><Icon size={14} /><span>{name}</span><em className={status === 'READY' ? 'status-ready' : ''}><i />{status}</em></div>
+        <div className="status-row" key={name as string}><Icon size={14} /><span>{name as string}</span><em className={status !== 'NOT CONNECTED' && status !== 'STANDBY' ? 'status-ready' : ''}><i />{status as string}</em></div>
       ))}
     </div>
   );
@@ -389,15 +389,34 @@ function App() {
         <section className="engineering-section" id="performance">
           <SectionHeading eyebrow="ENGINEERING TELEMETRY" title="Make the system measurable"><span className="muted-note"><Activity size={15} /> Live metrics arrive from the backend</span></SectionHeading>
           <div className="telemetry-grid">
-            <div className="latency-card"><div className="card-heading"><Gauge size={18} /><Label tone="yellow">LATENCY / MS</Label></div><div className="big-metrics"><div><span>P50</span><strong>—</strong></div><div><span>P70</span><strong>—</strong></div><div><span>P100</span><strong>—</strong></div></div><div className="timeline"><span>0</span><div><i /><i /><i /><i /></div><span>200ms TARGET</span></div></div>
-            <div className="benchmark-card"><div className="card-heading"><Clock3 size={18} /><Label tone="pink">BENCHMARK RUN</Label></div><div className="benchmark-title"><strong>—</strong><span>QUERIES MEASURED</span></div><div className="benchmark-row"><span>AVERAGE</span><b>—</b><span>FASTEST</span><b>—</b><span>SLOWEST</span><b>—</b></div><div className="card-caption">Run a representative test set to populate P50 / P70 / P100.</div></div>
+            <div className="latency-card"><div className="card-heading"><Gauge size={18} /><Label tone="yellow">LATENCY / MS</Label></div><div className="big-metrics"><div><span>CURRENT</span><strong>{latency ? latency.total_ms : '—'}</strong></div><div><span>TARGET</span><strong>200</strong></div><div><span>STATUS</span><strong>{latency ? (latency.total_ms <= 200 ? 'PASS' : 'FAIL') : '—'}</strong></div></div><div className="timeline"><span>0</span><div><i /><i /><i /><i /></div><span>200ms TARGET</span></div></div>
+            <div className="benchmark-card"><div className="card-heading"><Clock3 size={18} /><Label tone="pink">BENCHMARK RUN</Label></div><div className="benchmark-title"><strong>—</strong><span>QUERIES MEASURED</span></div><div className="benchmark-row"><span>AVERAGE</span><b>—</b><span>FASTEST</span><b>—</b><span>SLOWEST</span><b>—</b></div><div className="card-caption">Run a representative test set to populate aggregate metrics.</div></div>
           </div>
           <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'TRANSLATION', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
         </section>
 
         <section className="lower-grid">
-          <section className="panel strategy-panel"><SectionHeading eyebrow="INDEX DESIGN" title="Chunking strategy explorer"><span className="mono">4 STRATEGIES</span></SectionHeading><div className="strategy-list">{strategies.map((item, index) => <div className={`strategy-row strategy-${item.color}`} key={item.name}><span className="strategy-index">0{index + 1}</span><div><strong>{item.name}</strong><small>{item.detail}</small></div><span className="strategy-value">—</span><ArrowUpRight size={16} /></div>)}</div><div className="table-header"><span>STRATEGY</span><span>CHUNKS</span><span>AVG SIZE</span><span>SCORE</span><span>LATENCY</span></div></section>
-          <section className="panel system-panel" id="system"><SectionHeading eyebrow="RUNTIME" title="System status"><span className="connection-indicator"><i /> DEVELOPMENT</span></SectionHeading><SystemStatus /><div className="dataset-card"><div><Label tone="yellow">KNOWLEDGE SOURCE</Label><strong>MSMARCO-XI</strong><span>AI4BHARAT · Hugging Face dataset</span></div><ArrowUpRight size={17} /></div><button className="architecture-button" onClick={() => setShowArchitecture((value) => !value)}>{showArchitecture ? 'HIDE' : 'VIEW'} SYSTEM CONTRACT <ArrowDown size={15} /></button>{showArchitecture && <div className="architecture-popover"><code>VOICE → SARVAM STT → MULTILINGUAL ADAPTER → {strategy.toUpperCase()} RETRIEVAL → GROUNDING → GENERATION → SAFETY</code></div>}</section>
+          <section className="panel strategy-panel">
+            <SectionHeading eyebrow="INDEX DESIGN" title="Chunking strategy explorer"><span className="mono">4 STRATEGIES</span></SectionHeading>
+            <div className="strategy-list">
+              {strategies.map((item, index) => {
+                const isSelected = item.name.toLowerCase().includes(strategy) || (strategy === 'fixed' && item.name.includes('Fixed'));
+                const score = isSelected && sources.length > 0 ? (sources.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / sources.length).toFixed(4) : '—';
+                const lat = isSelected && latency ? latency.retrieval_ms + 'ms' : '—';
+                return (
+                  <div className={`strategy-row ${isSelected ? `strategy-${item.color}` : ''}`} key={item.name} style={{ opacity: isSelected ? 1 : 0.4 }}>
+                    <span className="strategy-index">0{index + 1}</span>
+                    <div><strong>{item.name}</strong><small>{item.detail}</small></div>
+                    <span className="strategy-value">{score}</span>
+                    <span className="strategy-value" style={{ width: '40px', textAlign: 'right' }}>{lat}</span>
+                    <ArrowUpRight size={16} style={{ opacity: isSelected ? 1 : 0 }} />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="table-header"><span>STRATEGY</span><span style={{flex: 2}}>DESCRIPTION</span><span>SCORE</span><span>LATENCY</span></div>
+          </section>
+          <section className="panel system-panel" id="system"><SectionHeading eyebrow="RUNTIME" title="System status"><span className="connection-indicator"><i /> DEVELOPMENT</span></SectionHeading><SystemStatus isConnected={sources.length > 0} state={pipelineState} /><div className="dataset-card"><div><Label tone="yellow">KNOWLEDGE SOURCE</Label><strong>MSMARCO-XI</strong><span>AI4BHARAT · Hugging Face dataset</span></div><ArrowUpRight size={17} /></div><button className="architecture-button" onClick={() => setShowArchitecture((value) => !value)}>{showArchitecture ? 'HIDE' : 'VIEW'} SYSTEM CONTRACT <ArrowDown size={15} /></button>{showArchitecture && <div className="architecture-popover"><code>VOICE → SARVAM STT → MULTILINGUAL ADAPTER → {strategy.toUpperCase()} RETRIEVAL → GROUNDING → GENERATION → SAFETY</code></div>}</section>
         </section>
       </main>
       <footer>
