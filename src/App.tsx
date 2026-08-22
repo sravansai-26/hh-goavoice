@@ -12,6 +12,7 @@ import {
   Gauge,
   GitBranch,
   Layers3,
+  Loader2,
   LockKeyhole,
   Mic,
   MicOff,
@@ -208,6 +209,8 @@ function App() {
   const submitQuery = async (queryToSubmit: string = transcript, detectedLang: string = "hi") => {
     if (!queryToSubmit) return;
     setPipelineState('processing');
+    setSources([]);
+    setAnswerData(null);
     try {
       const API_BASE = import.meta.env.VITE_API_URL || '';
       const ragRes = await fetch(`${API_BASE}/api/rag/query`, {
@@ -305,13 +308,20 @@ function App() {
                       <Label tone="yellow">PRIMARY TRANSCRIPT</Label>
                       {language && <span style={{ fontSize: '10px', color: 'var(--yellow)', textTransform: 'uppercase' }}>{language.name}</span>}
                     </div>
-                    <textarea 
-                      value={transcript} 
-                      onChange={(event) => setTranscript(event.target.value)} 
-                      style={{ background: 'transparent', border: 'none', color: 'var(--cream)', width: '100%', fontSize: '15px', resize: 'none', outline: 'none', padding: 0 }}
-                      rows={3}
-                      aria-label="Editable transcript" 
-                    />
+                    {pipelineState === 'processing' && !transcript ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', color: 'var(--yellow)' }}>
+                        <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                        <span style={{ fontSize: '14px', letterSpacing: '0.04em' }}>Converting speech to text...</span>
+                      </div>
+                    ) : (
+                      <textarea 
+                        value={transcript} 
+                        onChange={(event) => setTranscript(event.target.value)} 
+                        style={{ background: 'transparent', border: 'none', color: 'var(--cream)', width: '100%', fontSize: '15px', resize: 'none', outline: 'none', padding: 0 }}
+                        rows={3}
+                        aria-label="Editable transcript" 
+                      />
+                    )}
                   </div>
                 </div>
               ) : (
@@ -322,8 +332,8 @@ function App() {
                 <span className="mono">POST /api/voice/transcribe</span>
                 {recorderState === 'captured' && (
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="text-button" onClick={resetRecording} style={{ color: 'var(--muted)' }}>CLEAR</button>
-                    <button className="text-button submit-pulse" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>
+                    <button className="text-button" onClick={() => window.location.reload()} style={{ color: 'var(--muted)', cursor: 'pointer', zIndex: 10 }}>CLEAR</button>
+                    <button className="text-button submit-pulse" onClick={() => submitQuery(transcript, language?.detected || 'hi')} style={{ zIndex: 10 }}>SUBMIT</button>
                   </div>
                 )}
               </div>
@@ -350,6 +360,11 @@ function App() {
                     <h2 style={{ margin: 0, fontSize: 'clamp(20px, 2.5vw, 24px)', lineHeight: 1.3 }}>{answerData.primary}</h2>
                   </div>
                 </div>
+              ) : pipelineState === 'processing' && transcript ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px', flex: 1, padding: '40px 0' }}>
+                  <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--yellow)' }} />
+                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--yellow)', letterSpacing: '0.05em' }}>Retrieving context & generating answer...</p>
+                </div>
               ) : (
                 <>
                   <h2>Evidence before<br /><i>eloquence.</i></h2>
@@ -357,11 +372,8 @@ function App() {
                 </>
               )}
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: '32px', position: 'relative', zIndex: 10 }}>
                 <div className="guardrail-inline" style={{ margin: 0, paddingTop: 0, border: 'none' }}><ShieldCheck size={18} /><div><strong>SAFE BY DEFAULT</strong><span>Answers only pass when supported by retrieved context.</span></div><LockKeyhole size={15} /></div>
-                {answerData && (
-                  <button className="text-button" onClick={resetRecording} style={{ background: 'var(--green)', color: 'var(--cream)', padding: '8px 14px', borderRadius: '4px' }}>TRY ANOTHER QUERY</button>
-                )}
               </div>
             </section>
 
