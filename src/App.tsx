@@ -381,31 +381,37 @@ function App() {
               </div>
             </section>
 
-            <section className="panel architecture-panel">
-              <SectionHeading eyebrow="AI INTELLIGENCE" title="Model Infrastructure"><span className="active-chip"><i /> ONLINE</span></SectionHeading>
+            <section className="panel architecture-panel" style={{ background: 'var(--dark)', color: '#ffffff', border: '1px solid rgba(244,240,223,.2)' }}>
+              <div className="section-heading">
+                <div>
+                  <Label tone="yellow">INFRASTRUCTURE</Label>
+                  <h2 style={{ color: '#ffffff' }}>Model Infrastructure</h2>
+                </div>
+                <span className="active-chip"><i /> ONLINE</span>
+              </div>
               
               <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.06)', padding: '14px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.15)' }}>
                   <Radio size={20} color="var(--pink)" />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>SARVAM AI · STT ENGINE</strong>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>High-fidelity Indic language speech recognition</span>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em', color: '#ffffff' }}>SARVAM ENGINE</strong>
+                    <span style={{ fontSize: '12px', color: '#d0d8cb' }}>High-fidelity Indic language speech recognition</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.06)', padding: '14px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.15)' }}>
                   <Database size={20} color="var(--yellow)" />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>QDRANT · VECTOR SEARCH</strong>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Semantic retrieval from MSMARCO-XI database</span>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em', color: '#ffffff' }}>QDRANT · VECTOR SEARCH</strong>
+                    <span style={{ fontSize: '12px', color: '#d0d8cb' }}>Semantic retrieval from MSMARCO-XI database</span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--dark)', padding: '12px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.06)', padding: '14px', borderRadius: '6px', border: '1px solid rgba(244,240,223,.15)' }}>
                   <Sparkles size={20} color="var(--green)" />
                   <div>
-                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em' }}>GEMINI FLASH · GENERATION</strong>
-                    <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Evidence-grounded multilingual reasoning</span>
+                    <strong style={{ display: 'block', fontSize: '13px', letterSpacing: '0.04em', color: '#ffffff' }}>GEMINI FLASH · GENERATION</strong>
+                    <span style={{ fontSize: '12px', color: '#d0d8cb' }}>Evidence-grounded multilingual reasoning</span>
                   </div>
                 </div>
               </div>
