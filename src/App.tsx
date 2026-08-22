@@ -117,9 +117,13 @@ function App() {
   const [pipelineState, setPipelineState] = useState<PipelineState>('idle');
   const [seconds, setSeconds] = useState(0);
   const [transcript, setTranscript] = useState('');
-  const [strategy, setStrategy] = useState('fixed');
+  const [strategy, setStrategy] = useState('hybrid');
   const [showArchitecture, setShowArchitecture] = useState(false);
-  const [answer, setAnswer] = useState('');
+  
+  const [language, setLanguage] = useState<any>(null);
+  const [queryInfo, setQueryInfo] = useState<any>(null);
+  const [answerData, setAnswerData] = useState<any>(null);
+  
   const [sources, setSources] = useState<any[]>([]);
   const [guardrail, setGuardrail] = useState<any>(null);
   const [latency, setLatency] = useState<any>(null);
@@ -186,22 +190,19 @@ function App() {
       const sttData = await sttRes.json();
       if (sttData.success) {
         setTranscript(sttData.transcript);
+        await submitQuery(sttData.transcript, sttData.language);
       } else {
         setTranscript('Transcription failed: ' + (sttData.error?.message || 'Unknown error'));
         setPipelineState('idle');
         return;
       }
-      
-      // Auto-submit to RAG
-      await submitQuery(sttData.transcript);
-      
     } catch (error) {
       console.error(error);
       setPipelineState('idle');
     }
   };
   
-  const submitQuery = async (queryToSubmit: string = transcript) => {
+  const submitQuery = async (queryToSubmit: string = transcript, detectedLang: string = "hi") => {
     if (!queryToSubmit) return;
     setPipelineState('processing');
     try {
@@ -209,7 +210,7 @@ function App() {
       const ragRes = await fetch(`${API_BASE}/api/rag/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: queryToSubmit, strategy }),
+        body: JSON.stringify({ query: queryToSubmit, strategy, language: detectedLang }),
       });
       
       const ragData = await ragRes.json();
@@ -218,7 +219,9 @@ function App() {
         throw new Error(ragData.detail || 'RAG Query failed');
       }
       
-      setAnswer(ragData.answer);
+      setLanguage(ragData.language);
+      setQueryInfo(ragData.query);
+      setAnswerData(ragData.answer);
       setSources(ragData.sources || []);
       setIsGrounded(ragData.grounded || false);
       setGuardrail(ragData.guardrail);
@@ -226,7 +229,7 @@ function App() {
       setPipelineState('complete');
     } catch (error: any) {
       console.error(error);
-      setAnswer(`Error: ${error.message}`);
+      setAnswerData({ primary: `Error: ${error.message}`, english: "" });
       setSources([]);
       setPipelineState('complete');
     }
@@ -236,7 +239,9 @@ function App() {
     setRecorderState('ready');
     setPipelineState('idle');
     setTranscript('');
-    setAnswer('');
+    setLanguage(null);
+    setQueryInfo(null);
+    setAnswerData(null);
     setSources([]);
     setLatency(null);
     setSeconds(0);
@@ -261,7 +266,7 @@ function App() {
           <div className="hero-copy">
             <div className="hero-kicker"><span className="live-dot" /> LIVE RAG PIPELINE <span className="slash">/</span> CONNECTED</div>
             <h1>Ask the<br /><i>knowledge base.</i></h1>
-            <p className="hero-lede">A voice-enabled retrieval system built for HH Goa 2026. Speak naturally — we transcribe, retrieve, verify, then answer.</p>
+            <p className="hero-lede">A voice-enabled retrieval system built for HH Goa 2026. Speak naturally in any language — we translate, retrieve, verify, and answer.</p>
             <div className="flow-caption"><span>SPEAK NATURALLY</span><ArrowDown size={14} /><span>WE RETRIEVE</span><ArrowDown size={14} /><span>WE VERIFY</span><ArrowDown size={14} /><span>WE ANSWER</span></div>
           </div>
           <div className={`voice-console ${isBusy ? 'console-listening' : ''}`}>
@@ -288,8 +293,35 @@ function App() {
           <div className="left-column">
             <section className="panel transcript-panel" id="transcript">
               <SectionHeading eyebrow="VOICE → TEXT" title="Your question"><Label tone={recorderState === 'captured' ? 'green' : 'muted'}>{recorderState === 'captured' ? 'CAPTURED' : 'WAITING'}</Label></SectionHeading>
-              {recorderState === 'captured' ? <textarea value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Transcription will appear here when the STT adapter is connected." aria-label="Editable transcript" /> : <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>}
-              <div className="panel-footer"><span className="mono">POST /api/voice/transcribe</span>{recorderState === 'captured' && <button className="text-button" onClick={() => submitQuery(transcript)}>SUBMIT</button>}</div>
+              
+              {recorderState === 'captured' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, padding: '0 24px', position: 'relative' }}>
+                  <div style={{ background: 'var(--dark)', border: '1px solid rgba(244,240,223,.1)', borderRadius: '6px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <Label tone="yellow">PRIMARY TRANSCRIPT</Label>
+                      {language && <span style={{ fontSize: '10px', color: 'var(--yellow)', textTransform: 'uppercase' }}>{language.name}</span>}
+                    </div>
+                    <textarea 
+                      value={transcript} 
+                      onChange={(event) => setTranscript(event.target.value)} 
+                      style={{ background: 'transparent', border: 'none', color: 'var(--cream)', width: '100%', fontSize: '15px', resize: 'none', outline: 'none', padding: 0 }}
+                      rows={3}
+                      aria-label="Editable transcript" 
+                    />
+                  </div>
+                  
+                  {queryInfo && queryInfo.english && (
+                    <div style={{ background: 'var(--dark)', border: '1px solid rgba(244,240,223,.1)', borderRadius: '6px', padding: '16px' }}>
+                      <Label tone="muted">ENGLISH BRIDGE</Label>
+                      <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0' }}>{queryInfo.english}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>
+              )}
+              
+              <div className="panel-footer"><span className="mono">POST /api/voice/transcribe</span>{recorderState === 'captured' && <button className="text-button" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>}</div>
             </section>
 
             <section className="panel pipeline-panel">
@@ -301,15 +333,31 @@ function App() {
 
           <div className="right-column">
             <section className="answer-panel" id="answer">
-              <div className="answer-top"><Label tone={isGrounded ? 'green' : 'pink'}>ANSWER</Label><span className="mono">GROUNDING / {isGrounded ? 'PASS' : 'FAIL'}</span></div>
-              {answer ? (
-                <h2>{answer}</h2>
+              <div className="answer-top">
+                <Label tone={isGrounded ? 'green' : 'pink'}>ANSWER</Label>
+                <span className="mono">GROUNDING / {isGrounded ? 'PASS' : 'FAIL'}</span>
+              </div>
+              
+              {answerData ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  <div>
+                    <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: 'var(--yellow)', marginBottom: '10px', textTransform: 'uppercase' }}>{language?.name} — PRIMARY</h4>
+                    <h2 style={{ margin: 0, fontSize: 'clamp(20px, 2.5vw, 24px)', lineHeight: 1.3 }}>{answerData.primary}</h2>
+                  </div>
+                  {answerData.english && answerData.english !== answerData.primary && (
+                    <div style={{ borderTop: '1px solid rgba(244,240,223,.1)', paddingTop: '1.5rem' }}>
+                      <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: '#9cb4a3', marginBottom: '10px' }}>ENGLISH — SECONDARY</h4>
+                      <p style={{ margin: 0, fontSize: '15px', color: '#9cb4a3', lineHeight: 1.5 }}>{answerData.english}</p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <h2>Evidence before<br /><i>eloquence.</i></h2>
                   <p className="answer-empty">No answer generated yet. Connect the retrieval service to turn a spoken question into a grounded response.</p>
                 </>
               )}
+              
               <div className="guardrail-inline"><ShieldCheck size={18} /><div><strong>SAFE BY DEFAULT</strong><span>Answers only pass when supported by retrieved context.</span></div><LockKeyhole size={15} /></div>
             </section>
 
@@ -323,7 +371,7 @@ function App() {
                     <div key={idx} style={{ padding: '0.75rem', background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                         <span className="mono">{s.document_id || s.chunk_id}</span>
-                        <span>SCORE: {s.score?.toFixed(4)}</span>
+                        <span>SCORE: {s.score?.toFixed(4) || "N/A"}</span>
                       </div>
                       <p style={{ fontSize: '0.875rem', lineHeight: 1.5, margin: 0 }}>{s.text}</p>
                     </div>
@@ -344,12 +392,12 @@ function App() {
             <div className="latency-card"><div className="card-heading"><Gauge size={18} /><Label tone="yellow">LATENCY / MS</Label></div><div className="big-metrics"><div><span>P50</span><strong>—</strong></div><div><span>P70</span><strong>—</strong></div><div><span>P100</span><strong>—</strong></div></div><div className="timeline"><span>0</span><div><i /><i /><i /><i /></div><span>200ms TARGET</span></div></div>
             <div className="benchmark-card"><div className="card-heading"><Clock3 size={18} /><Label tone="pink">BENCHMARK RUN</Label></div><div className="benchmark-title"><strong>—</strong><span>QUERIES MEASURED</span></div><div className="benchmark-row"><span>AVERAGE</span><b>—</b><span>FASTEST</span><b>—</b><span>SLOWEST</span><b>—</b></div><div className="card-caption">Run a representative test set to populate P50 / P70 / P100.</div></div>
           </div>
-          <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'QUERY', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
+          <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'TRANSLATION', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
         </section>
 
         <section className="lower-grid">
           <section className="panel strategy-panel"><SectionHeading eyebrow="INDEX DESIGN" title="Chunking strategy explorer"><span className="mono">4 STRATEGIES</span></SectionHeading><div className="strategy-list">{strategies.map((item, index) => <div className={`strategy-row strategy-${item.color}`} key={item.name}><span className="strategy-index">0{index + 1}</span><div><strong>{item.name}</strong><small>{item.detail}</small></div><span className="strategy-value">—</span><ArrowUpRight size={16} /></div>)}</div><div className="table-header"><span>STRATEGY</span><span>CHUNKS</span><span>AVG SIZE</span><span>SCORE</span><span>LATENCY</span></div></section>
-          <section className="panel system-panel" id="system"><SectionHeading eyebrow="RUNTIME" title="System status"><span className="connection-indicator"><i /> DEVELOPMENT</span></SectionHeading><SystemStatus /><div className="dataset-card"><div><Label tone="yellow">KNOWLEDGE SOURCE</Label><strong>MSMARCO-XI</strong><span>AI4BHARAT · Hugging Face dataset</span></div><ArrowUpRight size={17} /></div><button className="architecture-button" onClick={() => setShowArchitecture((value) => !value)}>{showArchitecture ? 'HIDE' : 'VIEW'} SYSTEM CONTRACT <ArrowDown size={15} /></button>{showArchitecture && <div className="architecture-popover"><code>VOICE → SARVAM STT → QUERY VALIDATION → {strategy.toUpperCase()} RETRIEVAL → GROUNDING → GENERATION → SAFETY</code></div>}</section>
+          <section className="panel system-panel" id="system"><SectionHeading eyebrow="RUNTIME" title="System status"><span className="connection-indicator"><i /> DEVELOPMENT</span></SectionHeading><SystemStatus /><div className="dataset-card"><div><Label tone="yellow">KNOWLEDGE SOURCE</Label><strong>MSMARCO-XI</strong><span>AI4BHARAT · Hugging Face dataset</span></div><ArrowUpRight size={17} /></div><button className="architecture-button" onClick={() => setShowArchitecture((value) => !value)}>{showArchitecture ? 'HIDE' : 'VIEW'} SYSTEM CONTRACT <ArrowDown size={15} /></button>{showArchitecture && <div className="architecture-popover"><code>VOICE → SARVAM STT → MULTILINGUAL ADAPTER → {strategy.toUpperCase()} RETRIEVAL → GROUNDING → GENERATION → SAFETY</code></div>}</section>
         </section>
       </main>
       <footer>
