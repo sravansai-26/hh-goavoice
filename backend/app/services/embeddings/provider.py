@@ -9,40 +9,32 @@ class EmbeddingProvider:
     async def embed_query(self, text: str) -> list[float]:
         raise NotImplementedError
 
-class HFInferenceEmbeddingProvider(EmbeddingProvider):
+class LocalSentenceTransformerProvider(EmbeddingProvider):
     def __init__(self, model_name: str = None):
         self.model_name = model_name or settings.EMBEDDING_MODEL
-        self.api_url = f"https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/{self.model_name}"
-        self.headers = {}
-        hf_token = os.getenv("HF_TOKEN")
-        if hf_token:
-            self.headers["Authorization"] = f"Bearer {hf_token}"
-
-    async def _call_api(self, inputs):
-        def _sync_call():
-            import requests
-            response = requests.post(self.api_url, headers=self.headers, json={"inputs": inputs}, timeout=15)
-            response.raise_for_status()
-            return response.json()
-            
-        import asyncio
         try:
-            return await asyncio.to_thread(_sync_call)
-        except Exception as e:
-            raise Exception(f"HuggingFace Inference API Error: {str(e)}")
-
+            from sentence_transformers import SentenceTransformer
+            # Using cpu by default for broad compatibility
+            self.model = SentenceTransformer(self.model_name, device="cpu")
+        except ImportError:
+            raise Exception("sentence-transformers not installed.")
+            
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        return await self._call_api(texts)
+        def _embed():
+            return self.model.encode(texts).tolist()
+        import asyncio
+        return await asyncio.to_thread(_embed)
         
     async def embed_query(self, text: str) -> list[float]:
-        result = await self._call_api([text])
-        return result[0]
+        def _embed():
+            return self.model.encode([text])[0].tolist()
+        import asyncio
+        return await asyncio.to_thread(_embed)
 
 _provider_instance = None
 
 def get_embedding_provider() -> EmbeddingProvider:
     global _provider_instance
     if _provider_instance is None:
-        # Default to HF Inference API to save RAM on Render Free Tier
-        _provider_instance = HFInferenceEmbeddingProvider()
+        _provider_instance = LocalSentenceTransformerProvider()
     return _provider_instance

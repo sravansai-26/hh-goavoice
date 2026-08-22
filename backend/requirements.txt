@@ -93,3 +93,9 @@ watchfiles==1.2.0
 websockets==16.1.1
 xxhash==4.0.0
 yarl==1.24.5
+
+sentence-transformers==5.7.0
+torch==2.13.0+cpu
+transformers==5.15.0
+tokenizers==0.22.2
+safetensors==0.8.0
