@@ -26,8 +26,7 @@ class RetrievalService:
         must_conditions = []
         if strategy:
             must_conditions.append(FieldCondition(key="strategy", match=MatchValue(value=strategy)))
-        if language:
-            must_conditions.append(FieldCondition(key="language", match=MatchValue(value=language)))
+
             
         query_filter = Filter(must=must_conditions) if must_conditions else None
         

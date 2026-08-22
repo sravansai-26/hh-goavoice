@@ -127,6 +127,7 @@ function App() {
   const [sources, setSources] = useState<any[]>([]);
   const [guardrail, setGuardrail] = useState<any>(null);
   const [latency, setLatency] = useState<any>(null);
+  const [latencyHistory, setLatencyHistory] = useState<number[]>([]);
   const [isGrounded, setIsGrounded] = useState<boolean>(true);
   
   const mediaRecorder = useRef<MediaRecorder | null>(null);
@@ -190,7 +191,9 @@ function App() {
       const sttData = await sttRes.json();
       if (sttData.success) {
         setTranscript(sttData.transcript);
-        await submitQuery(sttData.transcript, sttData.language);
+        setLanguage({ detected: sttData.language, name: 'Detected Language' });
+        setQueryInfo({ english: sttData.error?.english_transcript });
+        setPipelineState('idle');
       } else {
         setTranscript('Transcription failed: ' + (sttData.error?.message || 'Unknown error'));
         setPipelineState('idle');
@@ -226,6 +229,7 @@ function App() {
       setIsGrounded(ragData.grounded || false);
       setGuardrail(ragData.guardrail);
       setLatency(ragData.latency);
+      setLatencyHistory((prev) => [...prev, ragData.latency.total_ms]);
       setPipelineState('complete');
     } catch (error: any) {
       console.error(error);
@@ -316,12 +320,6 @@ function App() {
                       <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0' }}>{queryInfo.english}</p>
                     </div>
                   )}
-                  {pipelineState === 'processing' && (!queryInfo || !queryInfo.english) && transcript && (
-                    <div style={{ background: 'var(--dark)', border: '1px solid rgba(244,240,223,.1)', borderRadius: '6px', padding: '16px' }}>
-                      <Label tone="muted">ENGLISH BRIDGE</Label>
-                      <p style={{ marginTop: '8px', fontSize: '14px', color: '#9cb4a3', margin: '8px 0 0 0', opacity: 0.5, fontStyle: 'italic' }}><span className="connection-indicator"><i /></span> Translating and searching knowledge base...</p>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="empty-box"><Waves size={18} /><span>Your next question starts here.</span><small>Press the microphone above to capture audio.</small></div>
@@ -330,7 +328,10 @@ function App() {
               <div className="panel-footer">
                 <span className="mono">POST /api/voice/transcribe</span>
                 {recorderState === 'captured' && (
-                  <button className="text-button submit-pulse" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="text-button" onClick={resetRecording} style={{ color: 'var(--muted)' }}>CLEAR</button>
+                    <button className="text-button submit-pulse" onClick={() => submitQuery(transcript, language?.detected || 'hi')}>SUBMIT</button>
+                  </div>
                 )}
               </div>
             </section>
@@ -350,9 +351,9 @@ function App() {
               </div>
               
               {answerData ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', flex: 1 }}>
                   <div>
-                    <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: 'var(--yellow)', marginBottom: '10px', textTransform: 'uppercase' }}>{language?.name} — PRIMARY</h4>
+                    <h4 style={{ fontSize: '11px', letterSpacing: '0.08em', color: 'var(--yellow)', marginBottom: '10px', textTransform: 'uppercase' }}>{language?.name || 'ANSWER'} — PRIMARY</h4>
                     <h2 style={{ margin: 0, fontSize: 'clamp(20px, 2.5vw, 24px)', lineHeight: 1.3 }}>{answerData.primary}</h2>
                   </div>
                   {answerData.english && answerData.english !== answerData.primary && (
@@ -369,7 +370,12 @@ function App() {
                 </>
               )}
               
-              <div className="guardrail-inline"><ShieldCheck size={18} /><div><strong>SAFE BY DEFAULT</strong><span>Answers only pass when supported by retrieved context.</span></div><LockKeyhole size={15} /></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: '32px' }}>
+                <div className="guardrail-inline" style={{ margin: 0, paddingTop: 0, border: 'none' }}><ShieldCheck size={18} /><div><strong>SAFE BY DEFAULT</strong><span>Answers only pass when supported by retrieved context.</span></div><LockKeyhole size={15} /></div>
+                {answerData && (
+                  <button className="text-button" onClick={resetRecording} style={{ background: 'var(--green)', color: 'var(--cream)', padding: '8px 14px', borderRadius: '4px' }}>TRY ANOTHER QUERY</button>
+                )}
+              </div>
             </section>
 
             <section className="panel inspector-panel" id="retrieval">
@@ -401,7 +407,18 @@ function App() {
           <SectionHeading eyebrow="ENGINEERING TELEMETRY" title="Make the system measurable"><span className="muted-note"><Activity size={15} /> Live metrics arrive from the backend</span></SectionHeading>
           <div className="telemetry-grid">
             <div className="latency-card"><div className="card-heading"><Gauge size={18} /><Label tone="yellow">LATENCY / MS</Label></div><div className="big-metrics"><div><span>CURRENT</span><strong>{latency ? latency.total_ms : '—'}</strong></div><div><span>TARGET</span><strong>200</strong></div><div><span>STATUS</span><strong>{latency ? (latency.total_ms <= 200 ? 'PASS' : 'FAIL') : '—'}</strong></div></div><div className="timeline"><span>0</span><div><i /><i /><i /><i /></div><span>200ms TARGET</span></div></div>
-            <div className="benchmark-card"><div className="card-heading"><Clock3 size={18} /><Label tone="pink">BENCHMARK RUN</Label></div><div className="benchmark-title"><strong>—</strong><span>QUERIES MEASURED</span></div><div className="benchmark-row"><span>AVERAGE</span><b>—</b><span>FASTEST</span><b>—</b><span>SLOWEST</span><b>—</b></div><div className="card-caption">Run a representative test set to populate aggregate metrics.</div></div>
+            <div className="benchmark-card">
+              <div className="card-heading"><Clock3 size={18} /><Label tone="pink">BENCHMARK RUN</Label></div>
+              <div className="benchmark-title">
+                <strong>{latencyHistory.length}</strong><span>QUERIES MEASURED</span>
+              </div>
+              <div className="benchmark-row">
+                <span>AVERAGE</span><b>{latencyHistory.length ? (latencyHistory.reduce((a,b)=>a+b,0)/latencyHistory.length).toFixed(0) : '—'}</b>
+                <span>FASTEST</span><b>{latencyHistory.length ? Math.min(...latencyHistory) : '—'}</b>
+                <span>SLOWEST</span><b>{latencyHistory.length ? Math.max(...latencyHistory) : '—'}</b>
+              </div>
+              <div className="card-caption">Aggregating real-time latency across current session.</div>
+            </div>
           </div>
           <div className="stages-bar"><span>STAGE LATENCY</span>{['STT', 'TRANSLATION', 'RETRIEVAL', 'GROUNDING', 'GENERATION', 'TOTAL'].map((stage) => <div key={stage}><b>{stage}</b><strong>{latency ? latency[`${stage.toLowerCase()}_ms`] || 0 : '—'}</strong><small>ms</small></div>)}</div>
         </section>
