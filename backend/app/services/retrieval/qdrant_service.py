@@ -16,9 +16,12 @@ class RetrievalService:
     async def retrieve(self, query: str, strategy: str = "fixed", top_k: int = 5, language: str = None) -> dict:
         start_time = time.time()
         
-        # 1. Embed query
-        query_vector = await self.embedder.embed_query(query)
-        
+        try:
+            # 1. Embed query
+            query_vector = await self.embedder.embed_query(query)
+        except Exception as e:
+            raise Exception(f"Embedding Failed: {str(e)}")
+            
         # 2. Prepare filter (optional: by strategy and language)
         must_conditions = []
         if strategy:
@@ -28,13 +31,16 @@ class RetrievalService:
             
         query_filter = Filter(must=must_conditions) if must_conditions else None
         
-        # 3. Search
-        search_result = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_vector,
-            query_filter=query_filter,
-            limit=top_k
-        )
+        try:
+            # 3. Search
+            search_result = self.client.query_points(
+                collection_name=self.collection_name,
+                query=query_vector,
+                query_filter=query_filter,
+                limit=top_k
+            )
+        except Exception as e:
+            raise Exception(f"Qdrant Search Failed: {str(e)}")
         
         # 4. Format results
         results = []
