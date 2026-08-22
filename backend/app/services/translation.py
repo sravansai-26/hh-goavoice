@@ -5,7 +5,7 @@ from google import genai
 class TranslationProvider:
     def __init__(self):
         self.api_key = settings.GENERATION_API_KEY
-        self.model = "gemini-2.5-flash"
+        self.model = "gemini-3.7-flash"
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
         else:
