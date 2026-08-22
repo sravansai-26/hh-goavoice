@@ -2,7 +2,7 @@
 **Hacker House Goa 2026 — Task 02 Submission**
 
 **Team: SyntheticMinds**
-**Members:** Sravan Sai Vuppula, Balaji Jakka
+**Members:** Sravan Sai Vuppula, Sai Balaji
 
 RAG//GOA is a production-grade, voice-enabled Retrieval-Augmented Generation (RAG) system built for the Hacker House Goa 2026. It seamlessly connects real-time voice input to a multi-strategy vector retrieval engine backed by the MSMARCO-XI dataset and Google Gemini, wrapped in a beautiful Bolt UI.
 

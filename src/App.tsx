@@ -476,7 +476,7 @@ function App() {
       <footer>
         <div className="footer-brand"><span>RAG</span><b>//</b><span>GOA</span></div>
         <span>
-          Designed and Developed by <a href="https://buildwithsravan.dev" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>Sravan Sai Vuppula</a>, Founder and Lead Developer at <a href="https://sailyfspot.blogspot.com" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>LYFSpot</a> for the Hacker House Goa by 2:47 pm studio.
+          Designed and Developed by <strong>Team SyntheticMinds</strong> — <a href="https://buildwithsravan.dev" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>Sravan Sai Vuppula</a> (Founder & Lead Developer at <a href="https://sailyfspot.blogspot.com" target="_blank" rel="noreferrer" style={{ color: 'var(--yellow)', textDecoration: 'none' }}>LYFSpot</a>) and <strong>Sai Balaji</strong> (Software Engineer Intern at HealthTech Mastery Academy) for Hacker House Goa by 2:47 pm studio.
         </span>
         <span className="footer-right"><Activity size={13} /> PRODUCTION READY · SERVICES CONNECTED</span>
       </footer>
